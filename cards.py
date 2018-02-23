@@ -11,7 +11,7 @@ def main():
 	going = True
 	while going == True:
 		chosenBlack = blackDeck[randrange(0, len(blackDeck))]
-		numOptions = 5 if len(sys.argv) == 1 else sys.argv[1]
+		numOptions = 5 if len(sys.argv) == 1 else int(sys.argv[1])
 		currentDeck = deepcopy(whiteDeck)
 		options = []
 		print("Black card:", chosenBlack)
@@ -39,7 +39,8 @@ def main():
 		 else goodPhrase
 		if blank == -1:
 			result = chosenBlack + ' ' + insertion
-		result = chosenBlack[:blank] + insertion + chosenBlack[blank + 1:]
+		else:
+			result = chosenBlack[:blank] + insertion + chosenBlack[blank + 1:]
 		print(result)
 		persist = input("Play again? (y/n)\n")
 		going = True if persist == "y" else False
