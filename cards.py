@@ -10,8 +10,12 @@ def main():
 	whiteDeck = [answer[:-1] for answer in answers]
 	going = True
 	while going == True:
-		chosenBlack = blackDeck[randrange(0, len(blackDeck))]
-		numOptions = 5 if len(sys.argv) == 1 else int(sys.argv[1])
+		try:
+			chosenBlack = blackDeck[randrange(0, len(blackDeck))]
+			numOptions = 7 if len(sys.argv) == 1 else \
+			min(max(int(sys.argv[1]), 7), len(whiteDeck))
+		except ValueError:
+   			numOptions = len(whiteDeck) if sys.argv[1] == "ALL" else 7
 		currentDeck = deepcopy(whiteDeck)
 		options = []
 		print("Black card:", chosenBlack)
@@ -22,30 +26,52 @@ def main():
 				print("The deck is empty.")
 				break
 			else:
-				index = randrange(0, len(whiteDeck))
+				index = randrange(0, len(whiteDeck) - i)
 				options.append(currentDeck.pop(index))
 		for i in range(len(options)):
 			print("Option " + str(i+1) + ": " + options[i])
-		invalid = True
-		while invalid == True:
-			choice = input("Which number card would you like to play?\n")
-			if int(choice) - 1 in range(numOptions):
-				invalid = False
-			else:
-				print("Invalid choice.") 
-		blank = chosenBlack.find('_')
-		goodPhrase = options[int(choice) - 1].upper()
-		insertion = goodPhrase[:-1] if goodPhrase[-1] == "." and blank >= 0 \
-		 else goodPhrase
-		if blank == -1:
+		blanks = chosenBlack.count('_')
+		if blanks == 0:
+			choice = getChoice(numOptions, [])
+			insertion = options[int(choice) - 1].upper()
 			result = chosenBlack + ' ' + insertion
 		else:
-			result = chosenBlack[:blank] + insertion + chosenBlack[blank + 1:]
+			result = chosenBlack
+			priorChoices = []
+			for i in range(blanks):
+				choice = getChoice(numOptions, priorChoices)
+				priorChoices.append(choice)
+				blank = result.find('_')
+				goodPhrase = options[int(choice) - 1].upper()
+				insertion = goodPhrase[:-1] if goodPhrase[-1] == "." and blank >= 0 \
+				 else goodPhrase
+				result = result[:blank] + insertion + result[blank + 1:]
+		if result[-1] not in "?!.":
+			result += "."
 		print(result)
 		persist = input("Play again? (y/n)\n")
 		going = True if persist == "y" else False
 
-
+def getChoice(numOptions, priorChoices):
+	invalid = True
+	while invalid == True:
+		choice = input("Which number card would you like to play?\n")
+		if choice == "n" or choice == "q":
+			exit()
+		try:
+   			check = int(choice)
+		except ValueError:
+   			print("Please input an integer between 1 and " + str(numOptions) + ".")
+   			return getChoice(numOptions, priorChoices)
+		if int(choice) - 1 not in range(numOptions):
+			print("Invalid choice.") 
+			return getChoice(numOptions, priorChoices)
+		elif choice in priorChoices:
+			print("You cannot select the same card twice.")
+			return getChoice(numOptions, priorChoices)
+		else:
+			invalid = False
+		return choice
 
 if __name__ == '__main__':
 	main()
