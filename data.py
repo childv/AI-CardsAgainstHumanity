@@ -22,7 +22,7 @@ def encode_word(word):
 
 
 def build_dataset(max_len):
-    df = pd.read_csv("Bojack.csv", delimiter=",", names=["y", "X"], usecols=[0,1], nrows=12731, encoding="latin-1")
+    df = pd.read_csv("Bojack.csv", delimiter=",", names=["y", "X"], usecols=[0,1], nrows=21068, encoding="latin-1")
     Xts = df["X"].values
     arr = []
     for text in Xts:

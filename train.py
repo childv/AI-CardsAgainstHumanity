@@ -8,7 +8,7 @@ import os
 os.environ["TF_CPP_MIN_LOG_LEVEL"] = "2"
 
 # Parameters
-version = 4
+version = 5
 words = 100000
 review_len = 128
 vec_len = 300
