@@ -1,7 +1,9 @@
 from itertools import combinations
 
 from cards import CardsAgainstHumanity
+from cards import Player
 from test import predict_batch
+import sys
 import numpy as np
 
 class AIPlayer:
@@ -67,11 +69,32 @@ def ai_game(game):
     #     print("")
     player.make_funny(sentences, combos)
 
+def makePlayers(game): 
+    numHumans = 1 if len(sys.argv) == 1 else min(4, int(sys.argv[1]))
+    numAIs = 1
+    numOptions = game.get_num_options()
+    whiteDeck = game.get_white_deck()
+    players = []
+    for i in range(numHumans):
+        players.append(Player(i, numOptions, False))
+    for i in range(numAIs):
+        players.append(Player(i+numHumans, numOptions, True))
+    for player in players:
+        player.makeHand(numOptions, whiteDeck)
+    return players
 
 def main():
     game = CardsAgainstHumanity()
-
-    ai_game(game)
+    #we cap the number of human players at 4
+    players = makePlayers(game)
+    going = True
+    playerTurn = 0
+    playerNames = ["Player " + str(i + 1) for i in range(len(players))]
+    while going == True:
+        print("---------- " + playerNames[playerTurn] + " should choose a card. ----------")
+        going = game.runTurn(players[playerTurn])
+        playerTurn = (playerTurn+1) % len(players)
+    #ai_game(game)
 
 
 if __name__ == '__main__':

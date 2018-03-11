@@ -10,7 +10,6 @@ class CardsAgainstHumanity:
 		self.currentDeck = None
 		self.chosenBlack = None
 		self.options = None
-
 		self.prepare_game()
 
 	def set_current_deck(self, currentDeck):
@@ -59,50 +58,36 @@ class CardsAgainstHumanity:
 		print("Black card:", self.get_chosen_black())
 		print("")
 
-	def get_white_cards(self, numOptions):
-		self.set_options([])
+	def get_white_cards(self, hand):
+		for i in range(len(hand)):
+			print("Option " + str(i + 1) + ": " + hand[i])
 
-
-		for i in range(numOptions):
-			numCards = len(self.whiteDeck)
-			if numCards == 0:
-				print("The deck is empty.")
-				break
-
-			else:
-				index = randrange(0, len(self.whiteDeck) - i)
-				self.append_options(self.currentDeck.pop(index))
-
-		for i in range(len(self.options)):
-			print("Option " + str(i + 1) + ": " + self.options[i])
-
-	def getChoice(self, numOptions, priorChoices, choice):
+	def getChoice(self, hand, priorChoices, choice):
 		invalid = True
 		while invalid == True:
-			if choice == "n" or choice == "q":
+			if choice == -1:
 				exit()
 			try:
 				check = int(choice)
 			except ValueError:
-				print("Please input an integer between 1 and " + str(numOptions) + ".")
+				print("Please input an integer between 1 and " + str(len(hand)) + ".")
+				choice = input("Which number card would you like to play?\n")
+				return self.getChoice(hand, priorChoices, choice)
+			choice = int(choice)
+			if choice - 1 not in range(len(hand)):
+				print("Please input an integer between 1 and " + str(len(hand)) + ".")
 				choice = input("Which number card would you like to play?\n")
 
-				return self.getChoice(numOptions, priorChoices, choice)
-
-			if int(choice) - 1 not in range(numOptions):
-				print("Invalid choice.")
-				choice = input("Which number card would you like to play?\n")
-
-				return self.getChoice(numOptions, priorChoices, choice)
+				return self.getChoice(hand, priorChoices, choice)
 
 			elif choice in priorChoices:
 				print("You cannot select the same card twice.")
-				choice = input("Which number card would you like to play?\n")
+				choice = int(input("Which number card would you like to play?\n"))
 
-				return self.getChoice(numOptions, priorChoices, choice)
+				return self.getChoice(hand, priorChoices, choice)
 			else:
 				invalid = False
-			return choice
+			return int(choice)
 
 	def get_num_options(self):
 		try:
@@ -112,13 +97,13 @@ class CardsAgainstHumanity:
 			numOptions = len(self.get_white_deck()) if sys.argv[1] == "ALL" else 7
 		return numOptions
 
-	def fill_in_blanks(self, blanks, numOptions):
+	def fill_in_blanks(self, blanks, hand):
 		places = ["first", "second", "third", "fourth"]
 
 		if blanks == 0:
-			choice = input("Which number card would you like to play?\n")
-			choice = self.getChoice(numOptions, [], choice)
-			insertion = self.get_options()[int(choice) - 1].upper()
+			choiceInput = input("Which number card would you like to play?\n")
+			choice = self.getChoice(hand, [], choiceInput)
+			insertion = hand.pop(choice - 1).upper()
 			result = self.get_chosen_black() + ' ' + insertion
 		else:
 			result = self.get_chosen_black()
@@ -128,17 +113,16 @@ class CardsAgainstHumanity:
 					choice = input("Which number card would you like to play?\n")
 				else:
 					choice = input("Which number card would you like to play for the " + places[i] + " blank?\n")
-
-				choice = self.getChoice(numOptions, priorChoices, choice)
+				choice = self.getChoice(hand, priorChoices, choice)
 				priorChoices.append(choice)
 
 				blank = result.find('_')
-				goodPhrase = self.get_options()[int(choice) - 1].upper()
-
+				goodPhrase = hand[choice - 1].upper()
 				insertion = goodPhrase[:-1] if goodPhrase[-1] == "." and blank >= 0 \
 					else goodPhrase
 				result = result[:blank] + insertion + result[blank + 1:]
-
+			for choice in priorChoices:
+				hand.pop(choice - 1)
 		return result
 
 	def insert_whites(self, blanks, combos):
@@ -158,7 +142,7 @@ class CardsAgainstHumanity:
 				else:
 					choice = combos[i]
 				blank = result.find('_')
-				goodPhrase = self.get_options()[int(choice) - 1].upper()
+				goodPhrase = self.get_options()[choice - 1].upper()
 
 				insertion = goodPhrase[:-1] if goodPhrase[-1] == "." and blank >= 0 \
 					else goodPhrase
@@ -167,19 +151,20 @@ class CardsAgainstHumanity:
 		return result
 
 
-	def runTurn(self, numOptions):
+	def runTurn(self, player):
 		self.set_current_deck(deepcopy(self.get_white_deck()))
-
+		deck = self.get_current_deck()
 		self.get_black_card()
 
 		print("Which option best completes the phrase?")
-		self.get_white_cards(numOptions)
+		hand = player.getHand()
+		self.get_white_cards(hand)
 
 		blanks = self.get_chosen_black().count('_')
 
-		result = self.fill_in_blanks(blanks, numOptions)
-
-
+		result = self.fill_in_blanks(blanks, hand)
+		for i in range(blanks):
+			player.drawCard(deck)
 		if result[-1] not in "?!.":
 			result += "."
 
@@ -187,7 +172,6 @@ class CardsAgainstHumanity:
 
 		persist = input("Play again? (y/n)\n")
 		going = True if persist == "y" else False
-
 		return going
 
 	def run_AI_turn(self, numOptions):
@@ -200,11 +184,43 @@ class CardsAgainstHumanity:
 
 		return self.get_chosen_black().count('_')
 
+class Player:
+	def __init__(self, num, numCards, ai):
+		self.num = num
+		self.hand = []
+		self.turn = 0
+		self.numCards = numCards
+		self.ai = ai
+		self.score = 0
+
+	def getNum(self):
+		return self.getNum
+
+	def playCard(self, num):
+		return self.hand.pop(num)
+
+	def drawCard(self, deck):
+		if not deck:
+			print("There are no more cards!")
+			finish()
+		self.hand.append(deck.pop(randrange(len(deck))))
+
+	def makeHand(self, numCards, deck):
+		for i in range(numCards):
+			self.drawCard(deck)
+
+	def getHand(self):
+		return self.hand
+
+	def isAI(self):
+		return self.ai
+
+	def finish():
+		print("The game is done")
+		
 def main():
 	game = CardsAgainstHumanity()
-
 	numOptions = game.get_num_options()
-
 	going = True
 	while going == True:
 		going = game.runTurn(numOptions)
