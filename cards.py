@@ -1,6 +1,9 @@
 #cards.py
 from random import *
 from copy import *
+from itertools import combinations
+from test import predict_batch
+import numpy as np
 import sys
 
 class CardsAgainstHumanity:
@@ -44,7 +47,6 @@ class CardsAgainstHumanity:
 		answers = open('against-humanity/answers.txt').readlines()
 		self.blackDeck = [question[:-1] for question in questions]
 		self.whiteDeck = [answer[:-1] for answer in answers]
-
 
 	def play_round(self):
 		numOptions = self.getOptions()
@@ -99,7 +101,6 @@ class CardsAgainstHumanity:
 
 	def fill_in_blanks(self, blanks, hand):
 		places = ["first", "second", "third", "fourth"]
-
 		if blanks == 0:
 			choiceInput = input("Which number card would you like to play?\n")
 			choice = self.getChoice(hand, [], choiceInput)
@@ -125,29 +126,27 @@ class CardsAgainstHumanity:
 				hand.pop(choice - 1)
 		return result
 
-	def insert_whites(self, blanks, combos):
+	def insert_whites(self, blanks, hand, combo):
 		if blanks == 0:
-			result = self.get_chosen_black() + ' ' + self.get_options()[combos-1]
+			result = self.get_chosen_black() + ' ' + hand[combo-1]
 
 		else:
 			result = self.get_chosen_black()
 			if blanks == 1:
 				length = 1
 			else:
-				length = len(combos)
+				length = len(combo)
 
 			for i in range(length):
 				if blanks == 1:
-					choice = combos
+					choice = combo
 				else:
 					choice = combos[i]
 				blank = result.find('_')
-				goodPhrase = self.get_options()[choice - 1].upper()
-
+				goodPhrase = hand[choice - 1].upper()
 				insertion = goodPhrase[:-1] if goodPhrase[-1] == "." and blank >= 0 \
 					else goodPhrase
 				result = result[:blank] + insertion + result[blank + 1:]
-
 		return result
 
 
@@ -163,24 +162,23 @@ class CardsAgainstHumanity:
 		blanks = self.get_chosen_black().count('_')
 
 		result = self.fill_in_blanks(blanks, hand)
+		if not blanks: 
+			player.drawCard(deck)
 		for i in range(blanks):
 			player.drawCard(deck)
 		if result[-1] not in "?!.":
 			result += "."
-
 		print(result)
+		return(result)
+		
 
-		persist = input("Play again? (y/n)\n")
-		going = True if persist == "y" else False
-		return going
-
-	def run_AI_turn(self, numOptions):
+	def run_AI_turn(self, hand):
 		self.set_current_deck(deepcopy(self.get_white_deck()))
 
 		self.get_black_card()
 
 		print("Which option best completes the phrase?")
-		self.get_white_cards(numOptions)
+		self.get_white_cards(hand)
 
 		return self.get_chosen_black().count('_')
 
@@ -214,6 +212,47 @@ class Player:
 
 	def isAI(self):
 		return self.ai
+
+	#ai players only
+	def get_combos(self, black_card, blanks, numOptions, white_cards):
+		variables = []
+
+		for i in range(numOptions):
+			variables.append(i+1)
+
+		if (blanks > 1):
+			return list(combinations(variables, blanks))
+		else:
+			return variables
+
+	#ai players only
+	def make_funny(self, sentences, combos):
+		humor_prediction = predict_batch(sentences)
+		print("")
+		for i in range(len(sentences)):
+			print(sentences[i] + " -> " + str(humor_prediction[i]))
+		print("")
+
+		funniest_sentence = np.argmax(humor_prediction)
+
+		if (type(combos[funniest_sentence]) == type(1)):
+			length = 1
+		else:
+			length = len(combos[funniest_sentence])
+
+		if (length <= 1):
+			chosen = "The agent chose card "
+		else:
+			chosen = "The agent chose cards "
+
+		chosen += str(combos[funniest_sentence])
+
+		print(chosen + ". This resulted in the following:")
+
+		best = sentences[funniest_sentence]
+		print(best)
+		print("")
+		return best
 
 	def finish():
 		print("The game is done")
