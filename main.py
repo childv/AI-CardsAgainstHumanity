@@ -1,6 +1,7 @@
 from cards import CardsAgainstHumanity
 from cards import Player
 from test import predict_batch
+from random import shuffle
 import sys
 import numpy as np
 
@@ -17,18 +18,44 @@ def ai_game(game, player):
     return player.make_funny(sentences, combos, player, deck)
 
 def makePlayers(game): 
-    numHumans = 1 if len(sys.argv) == 1 else min(4, int(sys.argv[1]))
+    numHumans = 2 if len(sys.argv) == 1 else max(2, min(5, int(sys.argv[1])))
     numAIs = 1
     numOptions = game.get_num_options()
     whiteDeck = game.get_white_deck()
     players = []
     for i in range(numHumans):
-        players.append(Player(i, numOptions, False))
+        players.append(Player(i+1, numOptions, False))
     for i in range(numAIs):
-        players.append(Player(i+numHumans, numOptions, True))
+        players.append(Player(i+numHumans+1, numOptions, True))
     for player in players:
         player.makeHand(numOptions, whiteDeck)
     return players
+
+def chooseBest(playerWithBlack, choices):
+    shuffle(choices)
+    print("The results are in! In no particular order: ")
+    for i in range(len(choices)):
+        print ("Option " + str(i+1) + ": " + choices[i][1])
+    choice = input("Player " + str(playerWithBlack.getNum()) + ", what is the funniest option?\n")
+    try:
+        check = int(choice)
+    except ValueError:
+        print("Please input an integer between 1 and " + str(len(choices)) + ".")
+        return chooseBest(playerWithBlack, choices)
+    choice = int(choice)
+    if choice - 1 not in range(len(choices)):
+        print("Please input an integer between 1 and " + str(len(hand)) + ".")
+        return self.getChoice(hand, priorChoices, choice)
+    return choices[choice-1][0]
+
+def showScores(players):
+    for player in players:
+        playerName = "Player " + str(player.getNum())
+        if player.isAI():
+            playerName += " (AI)"
+        print(playerName + ":", player.getScore(), "points.")
+        print(playerName, "won cards:", player.getWonCards())
+    print("Thanks for playing!")
 
 def main():
     game = CardsAgainstHumanity()
@@ -36,15 +63,28 @@ def main():
     players = makePlayers(game)
     going = True
     playerTurn = 0
-    playerNames = ["Player " + str(i + 1) for i in range(len(players))]
-    choices = []
+    playerNames = ["\n\nPlayer " + str(i + 1) for i in range(len(players))]
     while going == True:
-        print("---------- " + playerNames[playerTurn] + " should choose a card. ----------")
-        player = players[playerTurn]
-        choice = ai_game(game, player) if player.isAI() else game.runTurn(player)
+        playerWithBlack = players[playerTurn]
+        playersWhoChoose = [p for p in players if p is not playerWithBlack]
+        game.get_black_card()
+        print("Player " + str(playerWithBlack.getNum()) + " drew this card:")
+        print(game.get_chosen_black())
+        choices = []
+        for player in playersWhoChoose:
+            print("\n---------- Player " + str(player.getNum()) + " should choose a card. ----------")
+            choice = ai_game(game, player) if player.isAI() else game.runTurn(player)
+            choices.append((player.getNum(), choice))
+            print("\n\n\n\n")
+        playerWhoWins = chooseBest(playerWithBlack, choices)
+        print("The card " + game.get_chosen_black() + " goes to player " + str(playerWhoWins) + "!")
+        players[playerWhoWins-1].raiseScore(game.get_chosen_black())
         playerTurn = (playerTurn+1) % len(players)
+        if playerTurn == 0:
+            print("Now would be a fair time to stop.")
         persist = input("Play again? (y/n)\n")
         going = True if persist == "y" else False
+    showScores(players)
     #ai_game(game)
 
 

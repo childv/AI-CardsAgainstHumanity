@@ -57,8 +57,8 @@ class CardsAgainstHumanity:
 
 	def get_black_card(self):
 		self.set_chosen_black(self.blackDeck[randrange(0, len(self.blackDeck))])
-		print("Black card:", self.get_chosen_black())
-		print("")
+		#print("Black card:", self.get_chosen_black())
+		#print("")
 
 	def get_white_cards(self, hand):
 		for i in range(len(hand)):
@@ -67,7 +67,7 @@ class CardsAgainstHumanity:
 	def getChoice(self, hand, priorChoices, choice):
 		invalid = True
 		while invalid == True:
-			if choice == -1:
+			if choice == "-1":
 				exit()
 			try:
 				check = int(choice)
@@ -129,7 +129,7 @@ class CardsAgainstHumanity:
 
 	def insert_whites(self, blanks, hand, combos):
 		if blanks == 0:
-			insertion = hand[combos-1]
+			insertion = hand[combos-1].upper()
 			result = self.get_chosen_black() + ' ' + insertion
 
 		else:
@@ -155,9 +155,9 @@ class CardsAgainstHumanity:
 	def runTurn(self, player):
 		self.set_current_deck(deepcopy(self.get_white_deck()))
 		deck = self.get_current_deck()
-		self.get_black_card()
 
 		print("Which option best completes the phrase?")
+		print("Black card:", self.get_chosen_black())
 		hand = player.getHand()
 		self.get_white_cards(hand)
 
@@ -177,9 +177,10 @@ class CardsAgainstHumanity:
 	def run_AI_turn(self, hand):
 		self.set_current_deck(deepcopy(self.get_white_deck()))
 
-		self.get_black_card()
+		#self.get_black_card()
 
 		print("Which option best completes the phrase?")
+		print("Black card:", self.get_chosen_black())
 		self.get_white_cards(hand)
 
 		return self.get_chosen_black().count('_')
@@ -188,13 +189,13 @@ class Player:
 	def __init__(self, num, numCards, ai):
 		self.num = num
 		self.hand = []
-		self.turn = 0
+		self.wonCards = []
 		self.numCards = numCards
 		self.ai = ai
 		self.score = 0
 
 	def getNum(self):
-		return self.getNum
+		return self.num
 
 	def playCard(self, num):
 		return self.hand.pop(num)
@@ -218,6 +219,17 @@ class Player:
 	def isAI(self):
 		return self.ai
 
+	def raiseScore(self, blackCard):
+		self.score += 1
+		self.wonCards.append(blackCard)
+		print("Player " + str(self.num) + "'s score has been updated.")
+
+	def getScore(self):
+		return self.score
+
+	def getWonCards(self):
+		return self.wonCards
+
 	#ai players only
 	def get_combos(self, black_card, blanks, numOptions, white_cards):
 		variables = []
@@ -238,18 +250,13 @@ class Player:
 		for i in range(len(sentences)):
 			print(sentences[i] + " -> " + str(humor_prediction[i]))
 		print("")
-
 		funniest_sentence = np.argmax(humor_prediction)
-
 		if (type(combos[funniest_sentence]) == type(1)):
 			length = 1
 			hand.pop(combos[funniest_sentence]-1)
 			self.drawCard(deck)
 		else:
 			length = len(combos[funniest_sentence])
-			for combo in combos[funniest_sentence]:
-				print("COMBO", combo)
-				hand.pop(combo-1)
 			toRemove = [hand[combo-1] for combo in combos[funniest_sentence]]
 			player.setHand([card for card in hand if card not in toRemove])
 			for i in range(length):
