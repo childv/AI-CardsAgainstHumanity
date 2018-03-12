@@ -266,7 +266,6 @@ class Player:
 			chosen = "The agent chose card "
 		else:
 			chosen = "The agent chose cards "
-		print("FUNNIEST SENTENCE", funniest_sentence)
 		chosen += str(combos[funniest_sentence])
 		print(chosen + ". This resulted in the following:")
 
@@ -275,8 +274,9 @@ class Player:
 		print("")
 		return best
 
-	def finish():
-		print("The game is done")
+	def finish(self):
+		print("The game is done!")
+
 		
 def main():
 	game = CardsAgainstHumanity()

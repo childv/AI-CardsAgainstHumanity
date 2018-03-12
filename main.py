@@ -44,7 +44,7 @@ def chooseBest(playerWithBlack, choices):
         return chooseBest(playerWithBlack, choices)
     choice = int(choice)
     if choice - 1 not in range(len(choices)):
-        print("Please input an integer between 1 and " + str(len(hand)) + ".")
+        print("Please input an integer between 1 and " + str(len(choices)) + ".")
         return self.getChoice(hand, priorChoices, choice)
     return choices[choice-1][0]
 
@@ -57,28 +57,37 @@ def showScores(players):
         print(playerName, "won cards:", player.getWonCards())
     print("Thanks for playing!")
 
+def runRound(game, players, playerTurn):
+    playerWithBlack = players[playerTurn]
+    playersWhoChoose = [p for p in players if p is not playerWithBlack]
+    game.get_black_card()
+    print("\n\n\n\n\n---------- NEW ROUND ----------")
+    blackPlayerNum = str(playerWithBlack.getNum())
+    input("Player " + blackPlayerNum + ", press return to draw a black card.")
+    print("Player " + blackPlayerNum + " drew this card:")
+    print(game.get_chosen_black())
+    choices = []
+    for player in playersWhoChoose:
+        playerNum = str(player.getNum())
+        AI = player.isAI()
+        print("\n---------- Player " + playerNum + " should choose a card. ----------")
+        if not AI:
+            input("Player " + playerNum + ", press return when you're ready.")
+        choice = ai_game(game, player) if AI else game.runTurn(player)
+        choices.append((player.getNum(), choice))
+        print("\n\n\n\n")
+    playerWhoWins = chooseBest(playerWithBlack, choices)
+    print("The card " + game.get_chosen_black() + " goes to player " + str(playerWhoWins) + "!")
+    players[playerWhoWins-1].raiseScore(game.get_chosen_black())
+
 def main():
     game = CardsAgainstHumanity()
     #we cap the number of human players at 4
     players = makePlayers(game)
     going = True
     playerTurn = 0
-    playerNames = ["\n\nPlayer " + str(i + 1) for i in range(len(players))]
     while going == True:
-        playerWithBlack = players[playerTurn]
-        playersWhoChoose = [p for p in players if p is not playerWithBlack]
-        game.get_black_card()
-        print("Player " + str(playerWithBlack.getNum()) + " drew this card:")
-        print(game.get_chosen_black())
-        choices = []
-        for player in playersWhoChoose:
-            print("\n---------- Player " + str(player.getNum()) + " should choose a card. ----------")
-            choice = ai_game(game, player) if player.isAI() else game.runTurn(player)
-            choices.append((player.getNum(), choice))
-            print("\n\n\n\n")
-        playerWhoWins = chooseBest(playerWithBlack, choices)
-        print("The card " + game.get_chosen_black() + " goes to player " + str(playerWhoWins) + "!")
-        players[playerWhoWins-1].raiseScore(game.get_chosen_black())
+        runRound(game, players, playerTurn)
         playerTurn = (playerTurn+1) % len(players)
         if playerTurn == 0:
             print("Now would be a fair time to stop.")
