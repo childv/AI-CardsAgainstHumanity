@@ -7,16 +7,14 @@ import numpy as np
 def ai_game(game, player):
     numOptions = game.get_num_options()
     sentences = []
+    deck = game.get_current_deck()
     hand = player.getHand()
     blanks = game.run_AI_turn(hand)
-
     combos = player.get_combos(game.get_chosen_black(), blanks, numOptions, game.get_options())
-
     for i in range(len(combos)):
         sentence = game.insert_whites(blanks, hand, combos[i])
         sentences.append(sentence)
-
-    return player.make_funny(sentences, combos)
+    return player.make_funny(sentences, combos, player, deck)
 
 def makePlayers(game): 
     numHumans = 1 if len(sys.argv) == 1 else min(4, int(sys.argv[1]))

@@ -99,8 +99,9 @@ class CardsAgainstHumanity:
 			numOptions = len(self.get_white_deck()) if sys.argv[1] == "ALL" else 7
 		return numOptions
 
-	def fill_in_blanks(self, blanks, hand):
+	def fill_in_blanks(self, blanks, player):
 		places = ["first", "second", "third", "fourth"]
+		hand = player.getHand()
 		if blanks == 0:
 			choiceInput = input("Which number card would you like to play?\n")
 			choice = self.getChoice(hand, [], choiceInput)
@@ -122,24 +123,25 @@ class CardsAgainstHumanity:
 				insertion = goodPhrase[:-1] if goodPhrase[-1] == "." and blank >= 0 \
 					else goodPhrase
 				result = result[:blank] + insertion + result[blank + 1:]
-			for choice in priorChoices:
-				hand.pop(choice - 1)
+			toRemove = [hand[choice-1] for choice in priorChoices]
+			player.setHand([card for card in hand if card not in toRemove])
 		return result
 
-	def insert_whites(self, blanks, hand, combo):
+	def insert_whites(self, blanks, hand, combos):
 		if blanks == 0:
-			result = self.get_chosen_black() + ' ' + hand[combo-1]
+			insertion = hand[combos-1]
+			result = self.get_chosen_black() + ' ' + insertion
 
 		else:
 			result = self.get_chosen_black()
 			if blanks == 1:
 				length = 1
 			else:
-				length = len(combo)
+				length = len(combos)
 
 			for i in range(length):
 				if blanks == 1:
-					choice = combo
+					choice = combos
 				else:
 					choice = combos[i]
 				blank = result.find('_')
@@ -161,7 +163,7 @@ class CardsAgainstHumanity:
 
 		blanks = self.get_chosen_black().count('_')
 
-		result = self.fill_in_blanks(blanks, hand)
+		result = self.fill_in_blanks(blanks, player)
 		if not blanks: 
 			player.drawCard(deck)
 		for i in range(blanks):
@@ -210,6 +212,9 @@ class Player:
 	def getHand(self):
 		return self.hand
 
+	def setHand(self, hand):
+		self.hand = hand
+
 	def isAI(self):
 		return self.ai
 
@@ -226,7 +231,8 @@ class Player:
 			return variables
 
 	#ai players only
-	def make_funny(self, sentences, combos):
+	def make_funny(self, sentences, combos, player, deck):
+		hand = player.getHand()
 		humor_prediction = predict_batch(sentences)
 		print("")
 		for i in range(len(sentences)):
@@ -237,16 +243,24 @@ class Player:
 
 		if (type(combos[funniest_sentence]) == type(1)):
 			length = 1
+			hand.pop(combos[funniest_sentence]-1)
+			self.drawCard(deck)
 		else:
 			length = len(combos[funniest_sentence])
+			for combo in combos[funniest_sentence]:
+				print("COMBO", combo)
+				hand.pop(combo-1)
+			toRemove = [hand[combo-1] for combo in combos[funniest_sentence]]
+			player.setHand([card for card in hand if card not in toRemove])
+			for i in range(length):
+				self.drawCard(deck)
 
 		if (length <= 1):
 			chosen = "The agent chose card "
 		else:
 			chosen = "The agent chose cards "
-
+		print("FUNNIEST SENTENCE", funniest_sentence)
 		chosen += str(combos[funniest_sentence])
-
 		print(chosen + ". This resulted in the following:")
 
 		best = sentences[funniest_sentence]
