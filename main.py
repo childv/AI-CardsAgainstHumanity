@@ -75,7 +75,7 @@ def runRound(game, players, playerTurn):
     game.get_black_card()
     print("\n\n\n\n\n---------- NEW ROUND ----------")
     blackPlayerNum = str(playerWithBlack.getNum())
-    if not blackPlayerNum.isAI():
+    if not playerWithBlack.isAI():
         input("Player " + blackPlayerNum + ", press return to draw a black card.")
     print("Player " + blackPlayerNum + " drew this card:")
     print(game.get_chosen_black())
